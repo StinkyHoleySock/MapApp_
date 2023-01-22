@@ -4,8 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.NetworkInfo.DetailedState
-import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
@@ -14,24 +12,62 @@ import android.util.Log
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.widget.PopupMenu
+import android.widget.PopupMenu.*
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.databinding.ActivityMainBinding
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
+import java.io.IOException
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val ordersAdapter by lazy {
+        FilesAdapter() { fileName, view ->
+            val popup = PopupMenu(this, view)
+            popup.inflate(R.menu.menu)
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.open -> {
+                        openPointsOnMap(fileName)
+                    }
+                    R.id.send -> {
+                        Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                true
+            }
+            popup.show()
+        }
+    }
+
+    private fun openPointsOnMap(fileName: String) {
+
+        binding.map.map.mapObjects.clear()
+        val pointsList = parseFile(this, "xml/$fileName")
+
+        for (point in pointsList) {
+            binding.map.map.mapObjects.addPlacemark(
+                Point(
+                    point.latitude.toDouble(),
+                    point.longitude.toDouble()
+                )
+            )
+        }
+    }
 
     //Battery level
     private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctxt: Context?, intent: Intent) {
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
             val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-            val batteryPct = level * 100 / scale.toFloat()
-            binding.tvBattery.text = "$batteryPct%"
+            val battery = level * 100 / scale.toFloat()
+            binding.tvBattery.text = "$battery%"
         }
     }
 
@@ -50,6 +86,8 @@ class MainActivity : AppCompatActivity() {
 
         setFullScreen()
         initView()
+
+//        Log.d("develop", "files: ${assets.list("")}")
 
         //receiver for battery level
         this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -77,31 +115,31 @@ class MainActivity : AppCompatActivity() {
 
     private fun initView() {
 
-        val pointsList = parseFile(this, "test.xml")
 
-        for (point in pointsList) {
-            binding.map.map.mapObjects.addPlacemark(
-                Point(
-                    point.latitude.toDouble(),
-                    point.longitude.toDouble()
-                )
-            )
+        ordersAdapter.setData(listFiles("xml"))
+
+        binding.rvFiles.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+            adapter = ordersAdapter
         }
+    }
 
+    private fun listFiles(path: String): MutableList<String> {
+        val files: MutableList<String> = mutableListOf()
+        val list: Array<String>?
+        try {
+            list = assets.list(path)
+            if (list!!.isNotEmpty()) {
+                for (file in list) {
+                    files.add(file)
+                    Log.d("develop", "files: $file")
 
-//        Log.d("develop", "${}")
-//        CameraPosition(Point(55, 37)), Animation(Animation.Type.SMOOTH, 0), null
-//        binding.tvBattery.text =
-//            batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1).toString()
-//
-//        binding.tvTime.text = java.text.DateFormat.getDateTimeInstance().format(Date());
-
-//        binding.tvNetwork.text = getSystemService(ConnectivityManager::class.java).activeNetwork
-
-//        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let {
-//            this.registerReceiver(null, it)
-//        }
-
+                }
+            }
+        } catch (e: IOException) {
+            return mutableListOf()
+        }
+        return files
     }
 
 }
