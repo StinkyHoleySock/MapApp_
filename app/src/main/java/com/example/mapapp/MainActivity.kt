@@ -20,13 +20,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.databinding.ActivityMainBinding
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.mapview.MapView
 import java.io.IOException
 import java.util.*
-
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
     private val ordersAdapter by lazy {
         FilesAdapter() { fileName, view ->
             val popup = PopupMenu(this, view)
@@ -51,7 +53,16 @@ class MainActivity : AppCompatActivity() {
         binding.map.map.mapObjects.clear()
         val pointsList = parseFile(this, "xml/$fileName")
 
+        val cameraPosition = CameraPosition(
+            Point(
+                pointsList[0].latitude.toDouble(),
+                pointsList[0].longitude.toDouble()
+            ), 11.0f, 0.0f, 0.0f
+        )
+        binding.map.map.move(cameraPosition)
+
         for (point in pointsList) {
+
             binding.map.map.mapObjects.addPlacemark(
                 Point(
                     point.latitude.toDouble(),
@@ -80,14 +91,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        MapKitFactory.setApiKey("da2a62fc-d17b-4ff5-9690-480e7e998219")
+//        PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
+        MapKitFactory.setApiKey("18c3a22c-a43b-4e3b-a5e3-4cf4da322159")
+        MapKitFactory.initialize(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setFullScreen()
         initView()
-
-//        Log.d("develop", "files: ${assets.list("")}")
 
         //receiver for battery level
         this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -115,7 +126,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun initView() {
 
-
         ordersAdapter.setData(listFiles("xml"))
 
         binding.rvFiles.apply {
@@ -140,6 +150,19 @@ class MainActivity : AppCompatActivity() {
             return mutableListOf()
         }
         return files
+    }
+
+
+    override fun onStart() {
+        binding.map.onStart()
+        MapKitFactory.getInstance().onStart()
+        super.onStart()
+    }
+
+    override fun onStop() {
+        binding.map.onStop()
+        MapKitFactory.getInstance().onStop()
+        super.onStop()
     }
 
 }
