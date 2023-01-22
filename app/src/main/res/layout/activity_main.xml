@@ -17,12 +17,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/tv_time"
+        <TextClock
+            android:id="@+id/tc_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            tools:text="12:20" />
+            android:layout_marginStart="16dp"/>
 
         <TextView
             android:id="@+id/tv_battery"
