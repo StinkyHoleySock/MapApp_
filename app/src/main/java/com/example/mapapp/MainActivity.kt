@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferences: SharedPreferences
 
+    //adapter for list of files
     private val ordersAdapter by lazy {
         FilesAdapter() { fileName, view ->
             val popup = PopupMenu(this, view)
@@ -34,8 +35,7 @@ class MainActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.open -> {
-                        preferences.getString("test", "wgs84Degree")
-                            ?.let { openPointsOnMap(fileName, it) }
+                        openPointsOnMap(fileName)
                     }
                     R.id.send -> {
                         Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
@@ -47,35 +47,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //listener for points on the map
     private val listener =
-        MapObjectTapListener { mapObject, point ->
+        MapObjectTapListener { _, point ->
             when (preferences.getString("test", "")) {
                 "wgs84Radian" -> {
                     Toast.makeText(
                         this,
                         "Coordinates in WGS-84 (Radian): ${point.latitude.toRadian()}, ${point.longitude.toRadian()}",
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_LONG
                     ).show()
                 }
                 "sk42" -> {
                     Toast.makeText(
                         this,
                         "Coordinates in SK-42: ${WGS84ToSK42Meters(point.latitude, point.longitude, 1.0).toList()}",
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_LONG
                     ).show()
                 }
                 else -> {
                     Toast.makeText(
                         this,
                         "Coordinates in WGS-84 (Degrees): ${point.latitude}, ${point.longitude}",
-                        Toast.LENGTH_SHORT
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             }
             true
         }
 
-    private fun openPointsOnMap(fileName: String, coordinateSystem: String) {
+    //this function displays points on the map
+    private fun openPointsOnMap(fileName: String) {
 
         binding.map.map.mapObjects.clear()
         val pointsList = parseFile(this, "xml/$fileName")
@@ -90,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //Battery level
+    //battery level receiver
     private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctxt: Context?, intent: Intent) {
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
@@ -100,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //wifi manager
     private fun getWifiName(): String? {
         val mWifiManager = (this.getSystemService(WIFI_SERVICE) as WifiManager)
         val info = mWifiManager.connectionInfo
@@ -107,27 +110,8 @@ class MainActivity : AppCompatActivity() {
         return info.ssid
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
 
-        MapKitFactory.setApiKey("18c3a22c-a43b-4e3b-a5e3-4cf4da322159")
-        MapKitFactory.initialize(this)
-
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        preferences = getSharedPreferences("test", MODE_PRIVATE)
-        val coordinatesSystem = preferences.getString("test", "")
-
-        setFullScreen()
-        initView()
-
-        //receiver for battery level
-        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        binding.tvNetwork.text = getWifiName()
-
-    }
-
+    //full screen mode
     private fun setFullScreen() {
         @Suppress("DEPRECATION")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -146,20 +130,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun initView() {
-
-        binding.menuCoordinates.setOnClickListener {
-            MenuDialog().show(supportFragmentManager, "DialogFragment")
-        }
-
-        ordersAdapter.setData(listFiles("xml"))
-
-        binding.rvFiles.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            adapter = ordersAdapter
-        }
-    }
-
+    //find local files
     private fun listFiles(path: String): MutableList<String> {
         val files: MutableList<String> = mutableListOf()
         val list: Array<String>?
@@ -176,6 +147,37 @@ class MainActivity : AppCompatActivity() {
             return mutableListOf()
         }
         return files
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        //initialize YandexMaps
+        MapKitFactory.setApiKey("18c3a22c-a43b-4e3b-a5e3-4cf4da322159")
+        MapKitFactory.initialize(this)
+
+        preferences = getSharedPreferences("test", MODE_PRIVATE)
+
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setFullScreen()
+
+        //setup button for dialog fragment
+        binding.menuCoordinates.setOnClickListener {
+            MenuDialog().show(supportFragmentManager, "DialogFragment")
+        }
+
+        //setup recyclerView
+        ordersAdapter.setData(listFiles("xml"))
+        binding.rvFiles.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+            adapter = ordersAdapter
+        }
+
+        //receiver for battery level
+        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        binding.tvNetwork.text = getWifiName()
+
     }
 
 

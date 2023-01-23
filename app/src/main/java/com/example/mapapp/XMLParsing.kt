@@ -4,18 +4,6 @@ import android.content.Context
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
-data class Mission(
-    val id: String,
-    val points: List<Point>
-)
-
-data class Point(
-    val latitude: String,
-    val longitude: String,
-    val time: String
-)
-
-
 fun parseFile(context: Context, fileName: String): MutableList<Point> {
     val input = context.assets.open(fileName)
     val parser = XmlPullParserFactory.newInstance().newPullParser()

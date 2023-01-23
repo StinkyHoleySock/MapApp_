@@ -10,7 +10,7 @@
         android:id="@+id/status_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/purple_200"
+        android:background="@color/teal_700"
         android:orientation="horizontal"
         android:paddingVertical="2dp"
         app:layout_constraintEnd_toEndOf="parent"
