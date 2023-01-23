@@ -37,6 +37,12 @@
             android:layout_marginStart="16dp"
             tools:text="TP_LINK" />
 
+        <TextView
+            android:id="@+id/tv_wifi_level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"/>
+
     </LinearLayout>
 
     <com.yandex.mapkit.mapview.MapView

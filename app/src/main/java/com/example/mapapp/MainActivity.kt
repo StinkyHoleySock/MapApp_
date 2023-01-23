@@ -12,6 +12,7 @@ import android.view.WindowManager
 import android.widget.PopupMenu
 import android.widget.PopupMenu.*
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.databinding.ActivityMainBinding
@@ -51,6 +52,14 @@ class MainActivity : AppCompatActivity() {
     private val listener =
         MapObjectTapListener { _, point ->
             when (preferences.getString("test", "")) {
+                "wgs84Degree" -> {
+                    Toast.makeText(
+                        this,
+                        "Coordinates in WGS-84 (Degrees): ${point.latitude}, ${point.longitude}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
                 "wgs84Radian" -> {
                     Toast.makeText(
                         this,
@@ -61,14 +70,20 @@ class MainActivity : AppCompatActivity() {
                 "sk42" -> {
                     Toast.makeText(
                         this,
-                        "Coordinates in SK-42: ${WGS84ToSK42Meters(point.latitude, point.longitude, 1.0).toList()}",
+                        "Coordinates in SK-42: ${
+                            WGS84ToSK42Meters(
+                                point.latitude,
+                                point.longitude,
+                                1.0
+                            ).toList()
+                        }",
                         Toast.LENGTH_LONG
                     ).show()
                 }
                 else -> {
                     Toast.makeText(
                         this,
-                        "Coordinates in WGS-84 (Degrees): ${point.latitude}, ${point.longitude}",
+                        "Wrong coordinate system",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -86,7 +101,7 @@ class MainActivity : AppCompatActivity() {
             binding.map.map.mapObjects.addPlacemark(
                 Point(
                     point.latitude.toDouble(),
-                    point.longitude.toDouble()
+                    point.longitude.toDouble(),
                 )
             ).addTapListener(listener)
         }
@@ -101,15 +116,6 @@ class MainActivity : AppCompatActivity() {
             binding.tvBattery.text = "$battery%"
         }
     }
-
-    //wifi manager
-    private fun getWifiName(): String? {
-        val mWifiManager = (this.getSystemService(WIFI_SERVICE) as WifiManager)
-        val info = mWifiManager.connectionInfo
-        Log.d("develop", "info: $info")
-        return info.ssid
-    }
-
 
     //full screen mode
     private fun setFullScreen() {
@@ -176,7 +182,13 @@ class MainActivity : AppCompatActivity() {
 
         //receiver for battery level
         this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        binding.tvNetwork.text = getWifiName()
+
+        val mWifiManager = (this.getSystemService(WIFI_SERVICE) as WifiManager)
+        val info = mWifiManager.connectionInfo
+        Log.d("develop", "info: $info")
+
+        binding.tvNetwork.text = info.ssid
+        binding.tvWifiLevel.text = "Wifi level: ${WifiManager.calculateSignalLevel(info.rssi, 5)}/5"
 
     }
 
