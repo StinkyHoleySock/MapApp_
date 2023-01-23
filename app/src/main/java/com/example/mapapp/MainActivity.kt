@@ -1,6 +1,8 @@
 package com.example.mapapp
 
+import android.Manifest
 import android.content.*
+import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
@@ -12,8 +14,8 @@ import android.view.WindowManager
 import android.widget.PopupMenu
 import android.widget.PopupMenu.*
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.databinding.ActivityMainBinding
 import com.yandex.mapkit.MapKitFactory
@@ -158,10 +160,22 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //initialize YandexMaps
-        MapKitFactory.setApiKey("18c3a22c-a43b-4e3b-a5e3-4cf4da322159")
-        MapKitFactory.initialize(this)
+        MapKitInitializer.initialize(
+            apiKey = "18c3a22c-a43b-4e3b-a5e3-4cf4da322159",
+            context = this
+        )
 
         preferences = getSharedPreferences("test", MODE_PRIVATE)
+
+        ActivityCompat.requestPermissions(
+            this, arrayOf(
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ),
+            PackageManager.PERMISSION_GRANTED
+        )
+
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -191,7 +205,6 @@ class MainActivity : AppCompatActivity() {
         binding.tvWifiLevel.text = "Wifi level: ${WifiManager.calculateSignalLevel(info.rssi, 5)}/5"
 
     }
-
 
     override fun onStart() {
         binding.map.onStart()
