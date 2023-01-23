@@ -21,7 +21,7 @@
             android:id="@+id/tc_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"/>
+            android:layout_marginStart="16dp" />
 
         <TextView
             android:id="@+id/tv_battery"
@@ -42,19 +42,33 @@
     <com.yandex.mapkit.mapview.MapView
         android:id="@+id/map"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_height="450dp"
+        app:layout_constraintBottom_toTopOf="@+id/rv_files"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/status_bar"/>
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/status_bar" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_files"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/map"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:listitem="@layout/item_xml_file"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/map"
+        tools:listitem="@layout/item_xml_file" />
+
+    <ImageView
+        android:id="@+id/menu_coordinates"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:src="@drawable/ic_more"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/status_bar"
+        app:tint="@color/black" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

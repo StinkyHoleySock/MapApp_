@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">MapApp</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="wgs_84_degree">WGS-84 (degree)</string>
+    <string name="wgs_84_radian">WGS-84 (radian)</string>
+    <string name="sk_42">SK-42</string>
 </resources>

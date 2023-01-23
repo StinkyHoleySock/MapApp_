@@ -1,9 +1,6 @@
 package com.example.mapapp
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.net.wifi.WifiManager
 import android.os.BatteryManager
 import android.os.Build
@@ -20,14 +17,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.databinding.ActivityMainBinding
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.map.CameraPosition
-import com.yandex.mapkit.mapview.MapView
+import com.yandex.mapkit.map.MapObjectTapListener
 import java.io.IOException
 import java.util.*
+
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var preferences: SharedPreferences
 
     private val ordersAdapter by lazy {
         FilesAdapter() { fileName, view ->
@@ -36,7 +34,8 @@ class MainActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.open -> {
-                        openPointsOnMap(fileName)
+                        preferences.getString("test", "wgs84Degree")
+                            ?.let { openPointsOnMap(fileName, it) }
                     }
                     R.id.send -> {
                         Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
@@ -48,27 +47,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openPointsOnMap(fileName: String) {
+    private val listener =
+        MapObjectTapListener { mapObject, point ->
+            when (preferences.getString("test", "")) {
+                "wgs84Radian" -> {
+                    Toast.makeText(
+                        this,
+                        "Coordinates in WGS-84 (Radian): ${point.latitude.toRadian()}, ${point.longitude.toRadian()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                "sk42" -> {
+                    Toast.makeText(
+                        this,
+                        "Coordinates in SK-42: ${WGS84ToSK42Meters(point.latitude, point.longitude, 1.0).toList()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                else -> {
+                    Toast.makeText(
+                        this,
+                        "Coordinates in WGS-84 (Degrees): ${point.latitude}, ${point.longitude}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            true
+        }
+
+    private fun openPointsOnMap(fileName: String, coordinateSystem: String) {
 
         binding.map.map.mapObjects.clear()
         val pointsList = parseFile(this, "xml/$fileName")
 
-        val cameraPosition = CameraPosition(
-            Point(
-                pointsList[0].latitude.toDouble(),
-                pointsList[0].longitude.toDouble()
-            ), 11.0f, 0.0f, 0.0f
-        )
-        binding.map.map.move(cameraPosition)
-
         for (point in pointsList) {
-
             binding.map.map.mapObjects.addPlacemark(
                 Point(
                     point.latitude.toDouble(),
                     point.longitude.toDouble()
                 )
-            )
+            ).addTapListener(listener)
         }
     }
 
@@ -91,11 +109,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION)
+
         MapKitFactory.setApiKey("18c3a22c-a43b-4e3b-a5e3-4cf4da322159")
         MapKitFactory.initialize(this)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        preferences = getSharedPreferences("test", MODE_PRIVATE)
+        val coordinatesSystem = preferences.getString("test", "")
 
         setFullScreen()
         initView()
@@ -125,6 +147,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initView() {
+
+        binding.menuCoordinates.setOnClickListener {
+            MenuDialog().show(supportFragmentManager, "DialogFragment")
+        }
 
         ordersAdapter.setData(listFiles("xml"))
 
