@@ -34,6 +34,22 @@ class MenuDialog : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        when (preferences.getString("test", "wgs84Degree")) {
+            "wgs84Degree" -> {
+                binding.wgs84Degree.isChecked = true
+            }
+            "wgs84Radian" -> {
+                binding.wgs84Radian.isChecked = true
+            }
+            "sk42" -> {
+                binding.sk42.isChecked = true
+            }
+            else -> {
+                binding.wgs84Degree.isChecked = true
+            }
+        }
+
         binding.wgs84Degree.setOnClickListener {
             Log.d("develop", "wgs84Degree")
             preferences.edit()
@@ -48,6 +64,7 @@ class MenuDialog : DialogFragment() {
         }
         binding.sk42.setOnClickListener {
             Log.d("develop", "sk42")
+            binding.sk42.isChecked = true
             preferences.edit()
                 .putString("test", "sk42")
                 .apply()
