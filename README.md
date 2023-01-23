@@ -1,4 +1,4 @@
-# MapApp_
+# MapApp
 
 Application for displaying points on a map using Yandex Mapkit in different coordinate systems
 
@@ -6,4 +6,3 @@ Application for displaying points on a map using Yandex Mapkit in different coor
 - Broadcast Receiver 
 - Parsing XML
 - Custom status bar
-- 
