@@ -4,7 +4,7 @@ import android.util.Log
 import java.io.*
 import java.net.Socket
 
-class TcpClient() {
+class TcpClient(listener: OnMessageReceived) {
 
     private var mServerMessage: String? = null
     private var mMessageListener: OnMessageReceived? = null
@@ -12,6 +12,9 @@ class TcpClient() {
     private var mBufferOut: PrintWriter? = null
     private var mBufferIn: BufferedReader? = null
 
+    init {
+        mMessageListener = listener
+    }
 
     fun sendMessage(message: String?) {
         if (mBufferOut != null && !mBufferOut!!.checkError()) {
@@ -38,7 +41,7 @@ class TcpClient() {
     fun run() {
         mRun = true
         try {
-            val socket = Socket("192.168.0.5", 5555)
+            val socket = Socket("192.168.0.5", 7777)
             try {
 
                 mBufferOut =
@@ -48,9 +51,8 @@ class TcpClient() {
                 sendMessage("test")
 
                 while (mRun) {
-                    Log.d("develop", "???")
                     mServerMessage = mBufferIn!!.readLine()
-                    if (mServerMessage != null && mMessageListener != null) {
+                    if (mServerMessage != null ) {
                         mMessageListener!!.messageReceived(mServerMessage)
                         Log.d("develop", "message: $mServerMessage")
                     }

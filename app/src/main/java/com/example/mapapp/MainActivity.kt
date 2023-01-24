@@ -4,9 +4,7 @@ import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
-import android.os.BatteryManager
-import android.os.Build
-import android.os.Bundle
+import android.os.*
 import android.util.Log
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -17,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.mapapp.TcpClient.OnMessageReceived
 import com.example.mapapp.databinding.ActivityMainBinding
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
@@ -24,21 +23,24 @@ import com.yandex.mapkit.map.MapObjectTapListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
-import java.io.PrintWriter
-import java.net.ServerSocket
-import java.net.Socket
 import java.util.*
 
 
-class MainActivity : AppCompatActivity(), TcpClient.OnMessageReceived {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferences: SharedPreferences
     private var data = ""
-    private val client = TcpClient()
+
+    private val client = TcpClient(object : OnMessageReceived {
+        override fun messageReceived(message: String?) {
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(this@MainActivity, "mes: $message", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    })
 
     //adapter for list of files
     private val ordersAdapter by lazy {
@@ -51,7 +53,11 @@ class MainActivity : AppCompatActivity(), TcpClient.OnMessageReceived {
                         openPointsOnMap(fileName)
                     }
                     R.id.send -> {
-                        Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
+                        CoroutineScope(IO).launch {
+
+                            client.sendMessage(fileName) //fixme: it must be a file, not a filename
+                        }
+//                        Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
                     }
                 }
                 true
@@ -217,6 +223,7 @@ class MainActivity : AppCompatActivity(), TcpClient.OnMessageReceived {
 
         binding.btn.setOnClickListener {
             CoroutineScope(IO).launch {
+                Log.d("develop", "clicked start")
                 client.run()
             }
         }
@@ -232,11 +239,6 @@ class MainActivity : AppCompatActivity(), TcpClient.OnMessageReceived {
         binding.map.onStop()
         MapKitFactory.getInstance().onStop()
         super.onStop()
-    }
-
-    override fun messageReceived(message: String?) {
-        Toast.makeText(this, "mes: $message", Toast.LENGTH_LONG).show()
-//        Log.d("develop", "mes: $message")
     }
 
 }
