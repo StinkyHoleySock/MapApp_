@@ -33,11 +33,12 @@ import java.net.Socket
 import java.util.*
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TcpClient.OnMessageReceived {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferences: SharedPreferences
     private var data = ""
+    private val client = TcpClient()
 
     //adapter for list of files
     private val ordersAdapter by lazy {
@@ -166,26 +167,6 @@ class MainActivity : AppCompatActivity() {
         return files
     }
 
-    suspend fun client(host: String, port: Int) {
-
-        val socket = Socket(host, port)
-        val writer = socket.getOutputStream()
-        writer.write(1)
-        val reader = Scanner(socket.getInputStream())
-
-        while (true) {
-            var input = ""
-            input = reader.nextLine()
-            if (data.length < 300) data += "\n$input" else data = input
-            Log.d("develop", "inp: $input")
-        }
-
-        reader.close()
-        writer.close()
-        socket.close()
-    }
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //initialize YandexMaps
@@ -193,9 +174,6 @@ class MainActivity : AppCompatActivity() {
             apiKey = "18c3a22c-a43b-4e3b-a5e3-4cf4da322159",
             context = this
         )
-        CoroutineScope(IO).launch {
-            client("192.168.0.2", 4440)
-        }
 
         preferences = getSharedPreferences("test", MODE_PRIVATE)
 
@@ -236,6 +214,12 @@ class MainActivity : AppCompatActivity() {
         binding.tvNetwork.text = info.ssid
         binding.tvWifiLevel.text = "Wifi level: ${WifiManager.calculateSignalLevel(info.rssi, 5)}/5"
 
+
+        binding.btn.setOnClickListener {
+            CoroutineScope(IO).launch {
+                client.run()
+            }
+        }
     }
 
     override fun onStart() {
@@ -248,6 +232,11 @@ class MainActivity : AppCompatActivity() {
         binding.map.onStop()
         MapKitFactory.getInstance().onStop()
         super.onStop()
+    }
+
+    override fun messageReceived(message: String?) {
+        Toast.makeText(this, "mes: $message", Toast.LENGTH_LONG).show()
+//        Log.d("develop", "mes: $message")
     }
 
 }
