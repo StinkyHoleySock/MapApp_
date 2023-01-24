@@ -21,7 +21,15 @@ import com.example.mapapp.databinding.ActivityMainBinding
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.MapObjectTapListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
+import java.io.BufferedReader
 import java.io.IOException
+import java.io.InputStreamReader
+import java.io.PrintWriter
+import java.net.ServerSocket
+import java.net.Socket
 import java.util.*
 
 
@@ -29,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferences: SharedPreferences
+    private var data = ""
 
     //adapter for list of files
     private val ordersAdapter by lazy {
@@ -157,6 +166,26 @@ class MainActivity : AppCompatActivity() {
         return files
     }
 
+    suspend fun client(host: String, port: Int) {
+
+        val socket = Socket(host, port)
+        val writer = socket.getOutputStream()
+        writer.write(1)
+        val reader = Scanner(socket.getInputStream())
+
+        while (true) {
+            var input = ""
+            input = reader.nextLine()
+            if (data.length < 300) data += "\n$input" else data = input
+            Log.d("develop", "inp: $input")
+        }
+
+        reader.close()
+        writer.close()
+        socket.close()
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //initialize YandexMaps
@@ -164,6 +193,9 @@ class MainActivity : AppCompatActivity() {
             apiKey = "18c3a22c-a43b-4e3b-a5e3-4cf4da322159",
             context = this
         )
+        CoroutineScope(IO).launch {
+            client("192.168.0.2", 4440)
+        }
 
         preferences = getSharedPreferences("test", MODE_PRIVATE)
 
