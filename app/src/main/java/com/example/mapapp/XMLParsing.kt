@@ -3,9 +3,15 @@ package com.example.mapapp
 import android.content.Context
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import java.io.File
+import java.io.FileInputStream
+import java.util.*
 
 fun parseFile(context: Context, fileName: String): MutableList<Point> {
-    val input = context.assets.open(fileName)
+//    val input = context.assets.open(fileName)
+//    val input = context.filesDir.
+    val file = (File(context.filesDir, fileName))
+    val input = FileInputStream(file)
     val parser = XmlPullParserFactory.newInstance().newPullParser()
     parser.setInput(input, null)
 

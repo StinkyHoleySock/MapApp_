@@ -23,6 +23,9 @@ import com.yandex.mapkit.map.MapObjectTapListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.*
 
@@ -40,6 +43,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        override fun saveFileInStorage(text: String) {
+            saveFile(file = "saint_p.xml", text = text)
+        }
+
     })
 
     //adapter for list of files
@@ -54,10 +61,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     R.id.send -> {
                         CoroutineScope(IO).launch {
-
                             client.sendMessage(fileName) //fixme: it must be a file, not a filename
                         }
-//                        Toast.makeText(this, "Coming soon", Toast.LENGTH_SHORT).show()
                     }
                 }
                 true
@@ -113,7 +118,7 @@ class MainActivity : AppCompatActivity() {
     private fun openPointsOnMap(fileName: String) {
 
         binding.map.map.mapObjects.clear()
-        val pointsList = parseFile(this, "xml/$fileName")
+        val pointsList = parseFile(this, fileName)
 
         for (point in pointsList) {
             binding.map.map.mapObjects.addPlacemark(
@@ -157,16 +162,29 @@ class MainActivity : AppCompatActivity() {
     //find local files
     private fun listFiles(path: String): MutableList<String> {
         val files: MutableList<String> = mutableListOf()
-        val list: Array<String>?
+//        var list: Array<String>?
         try {
-            list = assets.list(path)
-            if (list!!.isNotEmpty()) {
-                for (file in list) {
-                    files.add(file)
-                    Log.d("develop", "files: $file")
-
+            val path = filesDir.toString()
+            Log.d("develop", "Path: $path")
+            val directory = File(path)
+            val list = directory.listFiles()
+            Log.d("develop", "Size: " + (files?.size ?: -1))
+            if (list != null) {
+                for (i in list.indices) {
+                    files.add(list[i].name)
+                    Log.d("develop", "FileName:" + list[i].name)
                 }
             }
+
+//            Log.d("develop", "path: ${filesDir.absolutePath}")
+//            list = assets.list(path)
+//            if (list!!.isNotEmpty()) {
+//                for (file in list) {
+//                    files.add(file)
+//                    Log.d("develop", "files: $file")
+//
+//                }
+//            }
         } catch (e: IOException) {
             return mutableListOf()
         }
@@ -200,11 +218,13 @@ class MainActivity : AppCompatActivity() {
 
         //setup button for dialog fragment
         binding.menuCoordinates.setOnClickListener {
-            MenuDialog().show(supportFragmentManager, "DialogFragment")
+            readFile("123.xml")
+//            MenuDialog().show(supportFragmentManager, "DialogFragment")
+
         }
 
         //setup recyclerView
-        ordersAdapter.setData(listFiles("xml"))
+        ordersAdapter.setData(listFiles("xml")) // FIXME: тут должен быть лист имен файлов с директории сохранения
         binding.rvFiles.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
             adapter = ordersAdapter
@@ -220,12 +240,9 @@ class MainActivity : AppCompatActivity() {
         binding.tvNetwork.text = info.ssid
         binding.tvWifiLevel.text = "Wifi level: ${WifiManager.calculateSignalLevel(info.rssi, 5)}/5"
 
-
-        binding.btn.setOnClickListener {
-            CoroutineScope(IO).launch {
-                Log.d("develop", "clicked start")
-                client.run()
-            }
+        CoroutineScope(IO).launch {
+            Log.d("develop", "starting")
+            client.run()
         }
     }
 
@@ -241,4 +258,44 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
     }
 
+    override fun onDestroy() {
+        client.stopClient()
+        super.onDestroy()
+    }
+
+    private fun saveFile(file: String, text: String) {
+        try {
+            Log.d("develop", "All text in activity: $text")
+            val fos: FileOutputStream = openFileOutput(file, MODE_PRIVATE)
+            fos.write(text.toByteArray())
+            fos.close()
+            Log.d("develop", "Saved!: $text")
+        } catch (e: Exception) {
+            Log.e("TCP", "SAVE_FILE: Error", e)
+        }
+    }
+
+    private fun readFile(file: String) {
+        val path = filesDir.toString()
+        Log.d("develop", "Path: $path")
+        val directory = File(path)
+        val files = directory.listFiles()
+        Log.d("develop", "Size: " + (files?.size ?: -1))
+        if (files != null) {
+            for (i in files.indices) {
+                Log.d("develop", "FileName:" + files[i].name)
+            }
+        }
+        var text = ""
+        try {
+            val fis: FileInputStream = openFileInput(file)
+            val buffer: ByteArray = byteArrayOf()
+            fis.read(buffer)
+            fis.close()
+            text = buffer.toString()
+//            Log.d("develop", "text read: $text")
+        } catch (e: Exception) {
+            Log.e("TCP", "READ_FILE: Error", e)
+        }
+    }
 }

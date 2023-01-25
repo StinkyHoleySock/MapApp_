@@ -6,55 +6,58 @@ import java.net.Socket
 
 class TcpClient(listener: OnMessageReceived) {
 
-    private var mServerMessage: String? = null
-    private var mMessageListener: OnMessageReceived? = null
-    private var mRun = false
-    private var mBufferOut: PrintWriter? = null
-    private var mBufferIn: BufferedReader? = null
+    private var serverMessage: String? = null
+    private var messageListener: OnMessageReceived? = null
+    private var run = false
+    private var bufferOut: PrintWriter? = null
+    private var bufferIn: BufferedReader? = null
+    private var fileReader: FileReader? = null
+    private var text = ""
 
     init {
-        mMessageListener = listener
+        messageListener = listener
     }
 
     fun sendMessage(message: String?) {
-        if (mBufferOut != null && !mBufferOut!!.checkError()) {
-            mBufferOut!!.println(message)
-            mBufferOut!!.flush()
+        if (bufferOut != null && !bufferOut!!.checkError()) {
+            bufferOut!!.println(message)
+            bufferOut!!.flush()
         }
     }
 
     fun stopClient() {
-
-        // send mesage that we are closing the connection
         sendMessage("end")
-        mRun = false
-        if (mBufferOut != null) {
-            mBufferOut!!.flush()
-            mBufferOut!!.close()
+        run = false
+        if (bufferOut != null) {
+            bufferOut!!.flush()
+            bufferOut!!.close()
         }
-        mMessageListener = null
-        mBufferIn = null
-        mBufferOut = null
-        mServerMessage = null
+        messageListener = null
+        bufferIn = null
+        bufferOut = null
+        serverMessage = null
     }
 
     fun run() {
-        mRun = true
+        run = true
         try {
             val socket = Socket("192.168.0.5", 7777)
             try {
-
-                mBufferOut =
-                    PrintWriter(BufferedWriter(OutputStreamWriter(socket.getOutputStream())), true)
-
-                mBufferIn = BufferedReader(InputStreamReader(socket.getInputStream()))
+                bufferOut = PrintWriter(BufferedWriter(OutputStreamWriter(socket.getOutputStream())), true)
+                bufferIn = BufferedReader(InputStreamReader(socket.getInputStream()))
                 sendMessage("test")
 
-                while (mRun) {
-                    mServerMessage = mBufferIn!!.readLine()
-                    if (mServerMessage != null ) {
-                        mMessageListener!!.messageReceived(mServerMessage)
-                        Log.d("develop", "message: $mServerMessage")
+                while (run) {
+                    serverMessage = bufferIn!!.readLine()
+                    if (serverMessage != null) {
+                        messageListener!!.messageReceived(serverMessage)
+                        text += "$serverMessage\n"
+
+                        if (serverMessage == "") {
+                            messageListener!!.saveFileInStorage(text)
+                        }
+                        Log.d("develop", "message: $serverMessage")
+                        Log.d("develop", "all text: $text")
                     }
                 }
             } catch (e: Exception) {
@@ -70,5 +73,6 @@ class TcpClient(listener: OnMessageReceived) {
 
     interface OnMessageReceived {
         fun messageReceived(message: String?)
+        fun saveFileInStorage(text: String)
     }
 }
