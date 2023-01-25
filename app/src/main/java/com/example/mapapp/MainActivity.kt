@@ -25,10 +25,7 @@ import com.yandex.mapkit.map.MapObjectTapListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -62,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     R.id.send -> {
                         CoroutineScope(IO).launch {
-                            client.sendMessage(fileName)
+                            readFile(fileName)
                         }
                     }
                 }
@@ -115,7 +112,6 @@ class MainActivity : AppCompatActivity() {
 
     //this function displays points on the map
     private fun openPointsOnMap(fileName: String) {
-
         binding.map.map.mapObjects.clear()
         try {
             val pointsList = parseFile(this, fileName)
@@ -261,6 +257,7 @@ class MainActivity : AppCompatActivity() {
             fos.write(text.toByteArray())
             fos.close()
             Log.d("develop", "Saved!: $text")
+            //update list after saving file
             val listOfFiles = getListOfFiles()
             ordersAdapter.setData(listOfFiles)
         } catch (e: Exception) {
@@ -268,27 +265,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun readFile(file: String) {
-        val path = filesDir.toString()
-        Log.d("develop", "Path: $path")
-        val directory = File(path)
-        val files = directory.listFiles()
-        Log.d("develop", "Size: " + (files?.size ?: -1))
-        if (files != null) {
-            for (i in files.indices) {
-                Log.d("develop", "FileName:" + files[i].name)
-            }
-        }
-        var text = ""
-        try {
-            val fis: FileInputStream = openFileInput(file)
-            val buffer: ByteArray = byteArrayOf()
-            fis.read(buffer)
-            fis.close()
-            text = buffer.toString()
-//            Log.d("develop", "text read: $text")
-        } catch (e: Exception) {
-            Log.e("TCP", "READ_FILE: Error", e)
+    private fun readFile(fileName: String) {
+//        var text = ""
+//        val directory = "$filesDir/$fileName"
+//        val file = File(directory)
+        val fis: FileInputStream = this.openFileInput(fileName)
+        val isr = InputStreamReader(fis)
+        val bufferedReader = BufferedReader(isr)
+        val sb = StringBuilder()
+        var line: String?
+        while (bufferedReader.readLine().also { line = it } != null) {
+            client.sendMessage(line)
+            sb.append(line)
+            Log.d("develop", "read: $sb")
         }
     }
+
 }

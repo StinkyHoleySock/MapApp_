@@ -39,7 +39,7 @@ fun parseFile(context: Context, fileName: String): MutableList<Point> {
             }
             XmlPullParser.END_TAG -> {
                 when (parser.name) {
-                    "quest" -> {Mission(missionId, points)}
+                    "mission" -> {Mission(missionId, points)}
                     "point" -> {points.add(Point(latitude, longitude, time))}
                 }
             }
