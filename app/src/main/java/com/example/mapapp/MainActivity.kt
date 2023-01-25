@@ -3,6 +3,7 @@ package com.example.mapapp
 import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.wifi.WifiManager
 import android.os.*
 import android.util.Log
@@ -17,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.TcpClient.OnMessageReceived
 import com.example.mapapp.databinding.ActivityMainBinding
+import com.google.android.material.snackbar.Snackbar
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.MapObjectTapListener
@@ -27,6 +29,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -38,15 +41,13 @@ class MainActivity : AppCompatActivity() {
 
     private val client = TcpClient(object : OnMessageReceived {
         override fun messageReceived(message: String?) {
-            Handler(Looper.getMainLooper()).post {
-                Toast.makeText(this@MainActivity, "mes: $message", Toast.LENGTH_SHORT).show()
-            }
+            Log.d("develop", "Received message: $message")
         }
 
         override fun saveFileInStorage(text: String) {
-            saveFile(file = "saint_p.xml", text = text)
+            val fileName: String = SimpleDateFormat("dd-MM-yyyy_hh:mm:ss", Locale.US).format(Date())
+            saveFile(file = "$fileName.xml", text = text)
         }
-
     })
 
     //adapter for list of files
@@ -61,7 +62,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     R.id.send -> {
                         CoroutineScope(IO).launch {
-                            client.sendMessage(fileName) //fixme: it must be a file, not a filename
+                            client.sendMessage(fileName)
                         }
                     }
                 }
@@ -72,7 +73,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     //listener for points on the map
-    private val listener =
+    private val pointListener =
         MapObjectTapListener { _, point ->
             when (preferences.getString("test", "")) {
                 "wgs84Degree" -> {
@@ -105,9 +106,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> {
                     Toast.makeText(
-                        this,
-                        "Wrong coordinate system",
-                        Toast.LENGTH_LONG
+                        this, "Wrong coordinate system", Toast.LENGTH_LONG
                     ).show()
                 }
             }
@@ -118,16 +117,24 @@ class MainActivity : AppCompatActivity() {
     private fun openPointsOnMap(fileName: String) {
 
         binding.map.map.mapObjects.clear()
-        val pointsList = parseFile(this, fileName)
+        try {
+            val pointsList = parseFile(this, fileName)
 
-        for (point in pointsList) {
-            binding.map.map.mapObjects.addPlacemark(
-                Point(
-                    point.latitude.toDouble(),
-                    point.longitude.toDouble(),
-                )
-            ).addTapListener(listener)
+            for (point in pointsList) {
+                binding.map.map.mapObjects.addPlacemark(
+                    Point(
+                        point.latitude.toDouble(),
+                        point.longitude.toDouble(),
+                    )
+                ).addTapListener(pointListener)
+            }
+        } catch (e: Exception) {
+            val snackbar = Snackbar.make(binding.root, "Invalid file!", Snackbar.LENGTH_LONG)
+            snackbar.view.setBackgroundColor(Color.RED)
+            snackbar.show()
+            Log.e("parse", "error: ", e)
         }
+
     }
 
     //battery level receiver
@@ -159,72 +166,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //find local files
-    private fun listFiles(path: String): MutableList<String> {
-        val files: MutableList<String> = mutableListOf()
-//        var list: Array<String>?
-        try {
-            val path = filesDir.toString()
-            Log.d("develop", "Path: $path")
-            val directory = File(path)
-            val list = directory.listFiles()
-            Log.d("develop", "Size: " + (files?.size ?: -1))
-            if (list != null) {
-                for (i in list.indices) {
-                    files.add(list[i].name)
-                    Log.d("develop", "FileName:" + list[i].name)
-                }
-            }
-
-//            Log.d("develop", "path: ${filesDir.absolutePath}")
-//            list = assets.list(path)
-//            if (list!!.isNotEmpty()) {
-//                for (file in list) {
-//                    files.add(file)
-//                    Log.d("develop", "files: $file")
-//
-//                }
-//            }
-        } catch (e: IOException) {
-            return mutableListOf()
-        }
-        return files
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //initialize YandexMaps
-        MapKitInitializer.initialize(
-            apiKey = "18c3a22c-a43b-4e3b-a5e3-4cf4da322159",
-            context = this
-        )
-
-        preferences = getSharedPreferences("test", MODE_PRIVATE)
-
-        ActivityCompat.requestPermissions(
-            this, arrayOf(
-                Manifest.permission.ACCESS_WIFI_STATE,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ),
-            PackageManager.PERMISSION_GRANTED
-        )
-
-
+        MapKitInitializer.initialize(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
+        requestPermissions()
         setFullScreen()
 
-        //setup button for dialog fragment
-        binding.menuCoordinates.setOnClickListener {
-            readFile("123.xml")
-//            MenuDialog().show(supportFragmentManager, "DialogFragment")
+        preferences = getSharedPreferences("test", MODE_PRIVATE)
 
+        //choose coordinates system
+        binding.menuCoordinates.setOnClickListener {
+            MenuDialog().show(supportFragmentManager, "DialogFragment")
         }
 
         //setup recyclerView
-        ordersAdapter.setData(listFiles("xml")) // FIXME: тут должен быть лист имен файлов с директории сохранения
+        ordersAdapter.setData(getListOfFiles())
         binding.rvFiles.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
             adapter = ordersAdapter
@@ -235,15 +196,26 @@ class MainActivity : AppCompatActivity() {
 
         val mWifiManager = (this.getSystemService(WIFI_SERVICE) as WifiManager)
         val info = mWifiManager.connectionInfo
-        Log.d("develop", "info: $info")
 
         binding.tvNetwork.text = info.ssid
         binding.tvWifiLevel.text = "Wifi level: ${WifiManager.calculateSignalLevel(info.rssi, 5)}/5"
 
+        //run tcp connection
         CoroutineScope(IO).launch {
             Log.d("develop", "starting")
             client.run()
         }
+    }
+
+    private fun requestPermissions() {
+        ActivityCompat.requestPermissions(
+            this, arrayOf(
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ),
+            PackageManager.PERMISSION_GRANTED
+        )
     }
 
     override fun onStart() {
@@ -263,6 +235,25 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    private fun getListOfFiles(): MutableList<String> {
+        val files: MutableList<String> = mutableListOf()
+        try {
+            val path = filesDir.toString()
+            val directory = File(path)
+            val list = directory.listFiles()
+            if (list != null) {
+                for (i in list.indices) {
+                    files.add(list[i].name)
+                    Log.d("develop", "FileName:" + list[i].name)
+                }
+            }
+
+        } catch (e: IOException) {
+            return mutableListOf()
+        }
+        return files
+    }
+
     private fun saveFile(file: String, text: String) {
         try {
             Log.d("develop", "All text in activity: $text")
@@ -270,6 +261,8 @@ class MainActivity : AppCompatActivity() {
             fos.write(text.toByteArray())
             fos.close()
             Log.d("develop", "Saved!: $text")
+            val listOfFiles = getListOfFiles()
+            ordersAdapter.setData(listOfFiles)
         } catch (e: Exception) {
             Log.e("TCP", "SAVE_FILE: Error", e)
         }

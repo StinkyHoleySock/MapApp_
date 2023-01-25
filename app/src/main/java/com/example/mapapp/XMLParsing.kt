@@ -8,8 +8,7 @@ import java.io.FileInputStream
 import java.util.*
 
 fun parseFile(context: Context, fileName: String): MutableList<Point> {
-//    val input = context.assets.open(fileName)
-//    val input = context.filesDir.
+
     val file = (File(context.filesDir, fileName))
     val input = FileInputStream(file)
     val parser = XmlPullParserFactory.newInstance().newPullParser()

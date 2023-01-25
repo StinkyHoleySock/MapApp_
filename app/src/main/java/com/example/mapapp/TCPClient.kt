@@ -45,7 +45,7 @@ class TcpClient(listener: OnMessageReceived) {
             try {
                 bufferOut = PrintWriter(BufferedWriter(OutputStreamWriter(socket.getOutputStream())), true)
                 bufferIn = BufferedReader(InputStreamReader(socket.getInputStream()))
-                sendMessage("test")
+                sendMessage("start connection...")
 
                 while (run) {
                     serverMessage = bufferIn!!.readLine()
@@ -63,7 +63,6 @@ class TcpClient(listener: OnMessageReceived) {
             } catch (e: Exception) {
                 Log.e("TCP", "S: Error", e)
             } finally {
-
                 socket.close()
             }
         } catch (e: Exception) {
