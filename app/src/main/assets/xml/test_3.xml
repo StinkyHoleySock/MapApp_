@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<mission id="test">
-    <point latitude= "70.96" longitude= "30.157458" time= "13:50:31" />
-    <point latitude= "50.96" longitude= "40.157458" time= "13:50:31" />
-    <point latitude= "80.96" longitude= "40.157458" time= "13:50:31" />
-</mission>

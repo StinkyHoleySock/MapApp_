@@ -1,11 +1,12 @@
 package com.example.mapapp
 
 import android.content.Context
+import com.example.mapapp.Model.Mission
+import com.example.mapapp.Model.Point
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
 import java.io.FileInputStream
-import java.util.*
 
 fun parseFile(context: Context, fileName: String): MutableList<Point> {
 
@@ -39,7 +40,9 @@ fun parseFile(context: Context, fileName: String): MutableList<Point> {
             }
             XmlPullParser.END_TAG -> {
                 when (parser.name) {
-                    "mission" -> {Mission(missionId, points)}
+                    "mission" -> {
+                        Mission(missionId, points)
+                    }
                     "point" -> {points.add(Point(latitude, longitude, time))}
                 }
             }

@@ -1,6 +1,8 @@
 package com.example.mapapp
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -15,6 +17,8 @@ import android.widget.PopupMenu.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mapapp.TcpClient.OnMessageReceived
 import com.example.mapapp.databinding.ActivityMainBinding
@@ -34,7 +38,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferences: SharedPreferences
-    private var data = ""
 
     private val client = TcpClient(object : OnMessageReceived {
         override fun messageReceived(message: String?) {
@@ -44,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         override fun saveFileInStorage(text: String) {
             val fileName: String = SimpleDateFormat("dd-MM-yyyy_hh:mm:ss", Locale.US).format(Date())
             saveFile(file = "$fileName.xml", text = text)
+            sendNotification(fileName)
         }
     })
 
@@ -169,6 +173,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        createNotificationChannel()
 
         requestPermissions()
         setFullScreen()
@@ -252,11 +257,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveFile(file: String, text: String) {
         try {
-            Log.d("develop", "All text in activity: $text")
             val fos: FileOutputStream = openFileOutput(file, MODE_PRIVATE)
             fos.write(text.toByteArray())
             fos.close()
-            Log.d("develop", "Saved!: $text")
             //update list after saving file
             val listOfFiles = getListOfFiles()
             ordersAdapter.setData(listOfFiles)
@@ -266,19 +269,44 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun readFile(fileName: String) {
-//        var text = ""
-//        val directory = "$filesDir/$fileName"
-//        val file = File(directory)
         val fis: FileInputStream = this.openFileInput(fileName)
         val isr = InputStreamReader(fis)
         val bufferedReader = BufferedReader(isr)
-        val sb = StringBuilder()
         var line: String?
         while (bufferedReader.readLine().also { line = it } != null) {
             client.sendMessage(line)
-            sb.append(line)
-            Log.d("develop", "read: $sb")
         }
     }
 
+    //notification
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_DEFAULT).apply {
+                lightColor = Color.GREEN
+                enableLights(true)
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun sendNotification(fileName: String) {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("New file received!")
+            .setContentText("file: $fileName")
+            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        val notificationManager = NotificationManagerCompat.from(this)
+
+        notificationManager.notify(NOTIFICATION_ID, notification)
+
+    }
+    companion object {
+        private const val CHANNEL_ID = "cid"
+        private const val CHANNEL_NAME = "cname"
+        private const val NOTIFICATION_ID = 1
+    }
 }

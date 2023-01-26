@@ -1,4 +1,4 @@
-package com.example.mapapp
+package com.example.mapapp.Model
 
 data class Mission(
     val id: String,

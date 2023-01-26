@@ -51,19 +51,16 @@ class MenuDialog : DialogFragment() {
         }
 
         binding.wgs84Degree.setOnClickListener {
-            Log.d("develop", "wgs84Degree")
             preferences.edit()
                 .putString("test", "wgs84Degree")
                 .apply()
         }
         binding.wgs84Radian.setOnClickListener {
-            Log.d("develop", "wgs84Radian")
             preferences.edit()
                 .putString("test", "wgs84Radian")
                 .apply()
         }
         binding.sk42.setOnClickListener {
-            Log.d("develop", "sk42")
             binding.sk42.isChecked = true
             preferences.edit()
                 .putString("test", "sk42")

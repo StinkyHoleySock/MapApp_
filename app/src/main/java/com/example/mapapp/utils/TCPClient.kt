@@ -56,8 +56,6 @@ class TcpClient(listener: OnMessageReceived) {
                         if (serverMessage == "") {
                             messageListener!!.saveFileInStorage(text)
                         }
-                        Log.d("develop", "message: $serverMessage")
-                        Log.d("develop", "all text: $text")
                     }
                 }
             } catch (e: Exception) {
