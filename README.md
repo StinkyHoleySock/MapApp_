@@ -1,6 +1,6 @@
 # MapApp
----
-Application for displaying points on a map using Yandex Mapkit in different coordinate systems
+
+## Application for displaying points on a map using Yandex Mapkit in different coordinate systems
 
 + Points to be displayed are transmitted via tcp connection in xml file
 + Files can be sent from android device to PC
@@ -12,13 +12,9 @@ Application for displaying points on a map using Yandex Mapkit in different coor
 - Parsing XML
 - Custom status bar
 - Notifications
----
-Screenshots:
-
-<img src="https://https://user-images.githubusercontent.com/80001582/214037200-55068a84-d5ba-4f7a-9cb7-9d2096960422.png" width="300px" height="500px">
-
 
 ***
+### Screenshots
 
 ![изображение](https://user-images.githubusercontent.com/80001582/214037200-55068a84-d5ba-4f7a-9cb7-9d2096960422.png)
 ![изображение](https://user-images.githubusercontent.com/80001582/214037213-dfdc9787-a345-40fa-8981-88acad68f7dc.png)
